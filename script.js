@@ -1,5 +1,4 @@
 $(document).ready(function () {
-  // Function to fetch weather data and update the dashboard
   function getWeather(city) {
     var directLocation =
       "http://api.openweathermap.org/geo/1.0/direct?q=" +
@@ -58,7 +57,6 @@ $(document).ready(function () {
       $("#search-input").val("");
     }
   });
-
   $("#history").on("click", "button", function () {
     var city = $(this).data("city");
     getWeather(city);
@@ -67,6 +65,7 @@ $(document).ready(function () {
   function displayCurrentWeather(data, cityName) {
     var date = dayjs().format("hh:mma, D ddd, MMMM, YYYY");
     var icon = data.weather[0].icon;
+    console.log("icon", icon, "icon")
     var temperature = data.main.temp;
     var humidity = data.main.humidity;
     var windSpeed = data.wind.speed;
