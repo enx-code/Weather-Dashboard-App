@@ -1,24 +1,21 @@
 $(document).ready(function () {
-  $("#search-button").on("click", function (event) {
-    event.preventDefault();
-    var searchInput = $("#search-input").val();
-    console.log(searchInput);
+  // Function to fetch weather data and update the dashboard
+  function getWeather(city) {
     var directLocation =
       "http://api.openweathermap.org/geo/1.0/direct?q=" +
-      searchInput +
+      city +
       "&limit=1&appid=8b2153158617cd9459d1ae44448a1c63";
-    console.log(directLocation);
-    fetch(directLocation)
-      .then(function (responce) {
-        return responce.json();
-      })
-      .then(function (data) {
-        console.log(data[0].lat);
-        var lat = data[0].lat;
-        var lon = data[0].lon;
 
-        var queryURL =
-          "https://api.openweathermap.org/data/2.5/forecast?lat=" +
+    fetch(directLocation)
+      .then(function (response) {
+        return response.json();
+      })
+      .then(function (geoData) {
+        var lat = geoData[0].lat;
+        var lon = geoData[0].lon;
+
+        var currentWeatherURL =
+          "https://api.openweathermap.org/data/2.5/weather?lat=" +
           lat +
           "&lon=" +
           lon +
@@ -31,19 +28,12 @@ $(document).ready(function () {
           lon +
           "&appid=8b2153158617cd9459d1ae44448a1c63&units=metric";
 
-        fetch(queryURL)
-          .then(function (response) {
-            return response.json();
+        fetch(currentWeatherURL)
+          .then(function (currentResponse) {
+            return currentResponse.json();
           })
-          .then(function (data) {
-            console.log(data.city.sunrise);
-            console.log(data.city);
-            var cityName = data.city.name;
-            // var history = data.city
-            var history = $("#history");
-            history.text(cityName);
-
-            console.log(history);
+          .then(function (currentData) {
+            displayCurrentWeather(currentData, city);
           });
 
         fetch(forecastURL)
@@ -54,16 +44,77 @@ $(document).ready(function () {
             displayForecast(forecastData);
           });
       });
+  }
+
+  $("#search-form").on("submit", function (event) {
+    event.preventDefault();
+    var searchInput = $("#search-input").val();
+
+    if (searchInput.trim() !== "") {
+      getWeather(searchInput);
+
+      addCityToHistory(searchInput);
+
+      $("#search-input").val("");
+    }
   });
 
+  $("#history").on("click", "button", function () {
+    var city = $(this).data("city");
+    getWeather(city);
+  });
+
+  function displayCurrentWeather(data, cityName) {
+    var date = dayjs().format("hh:mma, D ddd, MMMM, YYYY");
+    var icon = data.weather[0].icon;
+    var temperature = data.main.temp;
+    var humidity = data.main.humidity;
+    var windSpeed = data.wind.speed;
+
+    $("#today").html(`
+      <h2>${cityName} - ${date}</h2>
+      <img src="https://openweathermap.org/img/w/${icon}.png" alt="Weather Icon">
+      <p>Temperature: ${temperature}°C</p>
+      <p>Humidity: ${humidity}%</p>
+      <p>Wind Speed: ${windSpeed} m/s</p>
+    `);
+  }
+
+  function displayForecast(data) {
+    var forecastList = data.list;
+    var forecastHTML = "";
+
+    for (var i = 0; i < forecastList.length; i += 8) {
+      var forecastDate = dayjs(forecastList[i].dt_txt).format(
+        "hh:mma, D ddd, MMMM, YYYY"
+      );
+      var forecastIcon = forecastList[i].weather[0].icon;
+      var forecastTemp = forecastList[i].main.temp;
+      var forecastHumidity = forecastList[i].main.humidity;
+
+      forecastHTML += `
+        <div class="col-md-2">
+          <h4>${forecastDate}</h4>
+          <img src="https://openweathermap.org/img/w/${forecastIcon}.png" alt="Weather Icon">
+          <p>Temperature: ${forecastTemp}°C</p>
+          <p>Humidity: ${forecastHumidity}%</p>
+        </div>
+      `;
+    }
+
+    $("#forecast").html(forecastHTML);
+  }
+
+  function addCityToHistory(city) {
+    $("#history").append(
+      `<button class="list-group-item list-group-item-action" data-city="${city}">${city}</button>`
+    );
+  }
+
   function currentDay() {
-    const currentDay = dayjs().format("hh:mma, D ddd, MMMM, YYYY");
-    $("#today").text(currentDay);
+    const currentDate = dayjs().format("hh:mma, D ddd, MMMM, YYYY");
+    $("#today").html(`<h2>${currentDate}</h2>`);
   }
+
   currentDay();
-  function forecast() {
-    const tomorrow = dayjs().add(1, "day").format("hh:mma, D ddd, MMMM, YYYY");
-    $("#forecast").text(tomorrow);
-  }
-  forecast();
 });
