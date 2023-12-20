@@ -1,7 +1,7 @@
 $(document).ready(function () {
   function getWeather(city) {
     var directLocation =
-      "http://api.openweathermap.org/geo/1.0/direct?q=" +
+      "https://api.openweathermap.org/geo/1.0/direct?q=" +
       city +
       "&limit=1&appid=8b2153158617cd9459d1ae44448a1c63";
 
